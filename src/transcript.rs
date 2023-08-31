@@ -1,5 +1,5 @@
 use halo2_proofs::{
-    halo2curves::{ff::PrimeField, Coordinates, CurveAffine},
+    halo2curves::{group::ff::PrimeField, Coordinates, CurveAffine},
     transcript::{
         EncodedChallenge, Transcript, TranscriptRead, TranscriptReadBuffer, TranscriptWrite,
         TranscriptWriterBuffer,
@@ -185,5 +185,5 @@ fn modulus<F>() -> U256
 where
     F: PrimeField<Repr = [u8; 0x20]>,
 {
-    U256::from_le_bytes((-F::ONE).to_repr()) + U256::from(1)
+    U256::from_le_bytes((-F::one()).to_repr()) + U256::from(1)
 }

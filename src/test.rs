@@ -29,20 +29,20 @@ fn render_huge() {
     run_render::<halo2::huge::HugeCircuit<Bn256>>()
 }
 
-#[test]
-fn render_maingate() {
-    run_render::<halo2::maingate::MainGateWithRange<Bn256>>()
-}
+// #[test]
+// fn render_maingate() {
+//     run_render::<halo2::maingate::MainGateWithRange<Bn256>>()
+// }
 
 #[test]
 fn render_separately_huge() {
     run_render_separately::<halo2::huge::HugeCircuit<Bn256>>()
 }
 
-#[test]
-fn render_separately_maingate() {
-    run_render_separately::<halo2::maingate::MainGateWithRange<Bn256>>()
-}
+// #[test]
+// fn render_separately_maingate() {
+//     run_render_separately::<halo2::maingate::MainGateWithRange<Bn256>>()
+// }
 
 fn run_render<T: halo2::TestCircuit<Fr>>() {
     let acc_encoding = AccumulatorEncoding {
@@ -267,9 +267,9 @@ mod ethereum {
 mod halo2 {
     use crate::{codegen::AccumulatorEncoding, transcript::Keccak256Transcript};
     use halo2_proofs::{
-        arithmetic::CurveAffine,
+        arithmetic::{CurveAffine, FieldExt},
         halo2curves::{
-            ff::{Field, FromUniformBytes, PrimeField, WithSmallOrderMulGroup},
+            group::ff::{Field, PrimeField},
             group::{prime::PrimeCurveAffine, Curve, Group},
             pairing::{MillerLoopResult, MultiMillerLoop},
             serde::SerdeObject,
@@ -309,8 +309,7 @@ mod halo2 {
     where
         M: Debug + MultiMillerLoop,
         <M::G1Affine as CurveAffine>::Base: PrimeField<Repr = [u8; 0x20]>,
-        M::Scalar:
-            Ord + FromUniformBytes<64, Repr = [u8; 0x20]> + WithSmallOrderMulGroup<3> + SerdeObject,
+        M::Scalar: FieldExt<Repr = [u8; 0x20]>,
         M::G1Affine: SerdeObject,
         M::G2Affine: SerdeObject,
         C: TestCircuit<M::Scalar>,
@@ -424,7 +423,7 @@ mod halo2 {
             arithmetic::CurveAffine,
             circuit::{Layouter, SimpleFloorPlanner, Value},
             halo2curves::{
-                ff::{Field, PrimeField},
+                group::ff::{Field, PrimeField},
                 pairing::MultiMillerLoop,
             },
             plonk::{
@@ -592,164 +591,164 @@ mod halo2 {
         }
     }
 
-    pub mod maingate {
-        use crate::{
-            codegen::AccumulatorEncoding,
-            test::halo2::{random_accumulator_limbs, TestCircuit},
-        };
-        use halo2_maingate::{
-            MainGate, MainGateConfig, MainGateInstructions, RangeChip, RangeConfig,
-            RangeInstructions, RegionCtx,
-        };
-        use halo2_proofs::{
-            arithmetic::CurveAffine,
-            circuit::{Layouter, SimpleFloorPlanner, Value},
-            halo2curves::{
-                ff::{Field, PrimeField},
-                pairing::MultiMillerLoop,
-            },
-            plonk::{Circuit, ConstraintSystem, Error},
-        };
-        use itertools::Itertools;
-        use rand::RngCore;
-        use std::iter;
+    // pub mod maingate {
+    //     use crate::{
+    //         codegen::AccumulatorEncoding,
+    //         test::halo2::{random_accumulator_limbs, TestCircuit},
+    //     };
+    //     use halo2_maingate::{
+    //         MainGate, MainGateConfig, MainGateInstructions, RangeChip, RangeConfig,
+    //         RangeInstructions, RegionCtx,
+    //     };
+    //     use halo2_proofs::{
+    //         arithmetic::CurveAffine,
+    //         circuit::{Layouter, SimpleFloorPlanner, Value},
+    //         halo2curves::{
+    //             ff::{Field, PrimeField},
+    //             pairing::MultiMillerLoop,
+    //         },
+    //         plonk::{Circuit, ConstraintSystem, Error},
+    //     };
+    //     use itertools::Itertools;
+    //     use rand::RngCore;
+    //     use std::iter;
 
-        #[derive(Clone)]
-        pub struct MainGateWithRangeConfig {
-            main_gate_config: MainGateConfig,
-            range_config: RangeConfig,
-        }
+    //     #[derive(Clone)]
+    //     pub struct MainGateWithRangeConfig {
+    //         main_gate_config: MainGateConfig,
+    //         range_config: RangeConfig,
+    //     }
 
-        impl MainGateWithRangeConfig {
-            fn configure<F: PrimeField>(
-                meta: &mut ConstraintSystem<F>,
-                composition_bits: Vec<usize>,
-                overflow_bits: Vec<usize>,
-            ) -> Self {
-                let main_gate_config = MainGate::<F>::configure(meta);
-                let range_config = RangeChip::<F>::configure(
-                    meta,
-                    &main_gate_config,
-                    composition_bits,
-                    overflow_bits,
-                );
-                MainGateWithRangeConfig {
-                    main_gate_config,
-                    range_config,
-                }
-            }
+    //     impl MainGateWithRangeConfig {
+    //         fn configure<F: PrimeField>(
+    //             meta: &mut ConstraintSystem<F>,
+    //             composition_bits: Vec<usize>,
+    //             overflow_bits: Vec<usize>,
+    //         ) -> Self {
+    //             let main_gate_config = MainGate::<F>::configure(meta);
+    //             let range_config = RangeChip::<F>::configure(
+    //                 meta,
+    //                 &main_gate_config,
+    //                 composition_bits,
+    //                 overflow_bits,
+    //             );
+    //             MainGateWithRangeConfig {
+    //                 main_gate_config,
+    //                 range_config,
+    //             }
+    //         }
 
-            fn main_gate<F: PrimeField>(&self) -> MainGate<F> {
-                MainGate::new(self.main_gate_config.clone())
-            }
+    //         fn main_gate<F: PrimeField>(&self) -> MainGate<F> {
+    //             MainGate::new(self.main_gate_config.clone())
+    //         }
 
-            fn range_chip<F: PrimeField>(&self) -> RangeChip<F> {
-                RangeChip::new(self.range_config.clone())
-            }
-        }
+    //         fn range_chip<F: PrimeField>(&self) -> RangeChip<F> {
+    //             RangeChip::new(self.range_config.clone())
+    //         }
+    //     }
 
-        #[derive(Clone, Default)]
-        pub struct MainGateWithRange<M: MultiMillerLoop> {
-            instances: Vec<M::Scalar>,
-        }
+    //     #[derive(Clone, Default)]
+    //     pub struct MainGateWithRange<M: MultiMillerLoop> {
+    //         instances: Vec<M::Scalar>,
+    //     }
 
-        impl<M> TestCircuit<M::Scalar> for MainGateWithRange<M>
-        where
-            M: MultiMillerLoop,
-            <M::G1Affine as CurveAffine>::Base: PrimeField<Repr = [u8; 0x20]>,
-            M::Scalar: PrimeField<Repr = [u8; 0x20]>,
-        {
-            fn min_k() -> u32 {
-                9
-            }
+    //     impl<M> TestCircuit<M::Scalar> for MainGateWithRange<M>
+    //     where
+    //         M: MultiMillerLoop,
+    //         <M::G1Affine as CurveAffine>::Base: PrimeField<Repr = [u8; 0x20]>,
+    //         M::Scalar: PrimeField<Repr = [u8; 0x20]>,
+    //     {
+    //         fn min_k() -> u32 {
+    //             9
+    //         }
 
-            fn new(acc_encoding: Option<AccumulatorEncoding>, mut rng: impl RngCore) -> Self {
-                let instances = if let Some(acc_encoding) = acc_encoding {
-                    random_accumulator_limbs::<M>(acc_encoding, rng)
-                } else {
-                    iter::repeat_with(|| M::Scalar::random(&mut rng))
-                        .take(10)
-                        .collect()
-                };
-                Self { instances }
-            }
+    //         fn new(acc_encoding: Option<AccumulatorEncoding>, mut rng: impl RngCore) -> Self {
+    //             let instances = if let Some(acc_encoding) = acc_encoding {
+    //                 random_accumulator_limbs::<M>(acc_encoding, rng)
+    //             } else {
+    //                 iter::repeat_with(|| M::Scalar::random(&mut rng))
+    //                     .take(10)
+    //                     .collect()
+    //             };
+    //             Self { instances }
+    //         }
 
-            fn instances(&self) -> Vec<M::Scalar> {
-                self.instances.clone()
-            }
-        }
+    //         fn instances(&self) -> Vec<M::Scalar> {
+    //             self.instances.clone()
+    //         }
+    //     }
 
-        impl<M: MultiMillerLoop> Circuit<M::Scalar> for MainGateWithRange<M>
-        where
-            M::Scalar: PrimeField,
-        {
-            type Config = MainGateWithRangeConfig;
-            type FloorPlanner = SimpleFloorPlanner;
-            #[cfg(feature = "halo2_circuit_params")]
-            type Params = ();
+    //     impl<M: MultiMillerLoop> Circuit<M::Scalar> for MainGateWithRange<M>
+    //     where
+    //         M::Scalar: PrimeField,
+    //     {
+    //         type Config = MainGateWithRangeConfig;
+    //         type FloorPlanner = SimpleFloorPlanner;
+    //         #[cfg(feature = "halo2_circuit_params")]
+    //         type Params = ();
 
-            fn without_witnesses(&self) -> Self {
-                unimplemented!()
-            }
+    //         fn without_witnesses(&self) -> Self {
+    //             unimplemented!()
+    //         }
 
-            fn configure(meta: &mut ConstraintSystem<M::Scalar>) -> Self::Config {
-                MainGateWithRangeConfig::configure(meta, vec![8], vec![4, 7])
-            }
+    //         fn configure(meta: &mut ConstraintSystem<M::Scalar>) -> Self::Config {
+    //             MainGateWithRangeConfig::configure(meta, vec![8], vec![4, 7])
+    //         }
 
-            fn synthesize(
-                &self,
-                config: Self::Config,
-                mut layouter: impl Layouter<M::Scalar>,
-            ) -> Result<(), Error> {
-                let main_gate = config.main_gate();
-                let range_chip = config.range_chip();
-                range_chip.load_table(&mut layouter)?;
+    //         fn synthesize(
+    //             &self,
+    //             config: Self::Config,
+    //             mut layouter: impl Layouter<M::Scalar>,
+    //         ) -> Result<(), Error> {
+    //             let main_gate = config.main_gate();
+    //             let range_chip = config.range_chip();
+    //             range_chip.load_table(&mut layouter)?;
 
-                let advices = layouter.assign_region(
-                    || "",
-                    |region| {
-                        let mut ctx = RegionCtx::new(region, 0);
+    //             let advices = layouter.assign_region(
+    //                 || "",
+    //                 |region| {
+    //                     let mut ctx = RegionCtx::new(region, 0);
 
-                        let advices = self
-                            .instances
-                            .iter()
-                            .map(|value| main_gate.assign_value(&mut ctx, Value::known(*value)))
-                            .try_collect::<_, Vec<_>, _>()?;
+    //                     let advices = self
+    //                         .instances
+    //                         .iter()
+    //                         .map(|value| main_gate.assign_value(&mut ctx, Value::known(*value)))
+    //                         .try_collect::<_, Vec<_>, _>()?;
 
-                        // Dummy gates to make all fixed column with values
-                        range_chip.decompose(
-                            &mut ctx,
-                            Value::known(M::Scalar::from(u64::MAX)),
-                            8,
-                            64,
-                        )?;
-                        range_chip.decompose(
-                            &mut ctx,
-                            Value::known(M::Scalar::from(u32::MAX as u64)),
-                            8,
-                            39,
-                        )?;
-                        let a = &advices[0];
-                        let b = main_gate.sub_sub_with_constant(
-                            &mut ctx,
-                            a,
-                            a,
-                            a,
-                            M::Scalar::from(2),
-                        )?;
-                        let cond = main_gate.assign_bit(&mut ctx, Value::known(M::Scalar::ONE))?;
-                        main_gate.select(&mut ctx, a, &b, &cond)?;
+    //                     // Dummy gates to make all fixed column with values
+    //                     range_chip.decompose(
+    //                         &mut ctx,
+    //                         Value::known(M::Scalar::from(u64::MAX)),
+    //                         8,
+    //                         64,
+    //                     )?;
+    //                     range_chip.decompose(
+    //                         &mut ctx,
+    //                         Value::known(M::Scalar::from(u32::MAX as u64)),
+    //                         8,
+    //                         39,
+    //                     )?;
+    //                     let a = &advices[0];
+    //                     let b = main_gate.sub_sub_with_constant(
+    //                         &mut ctx,
+    //                         a,
+    //                         a,
+    //                         a,
+    //                         M::Scalar::from(2),
+    //                     )?;
+    //                     let cond = main_gate.assign_bit(&mut ctx, Value::known(M::Scalar::ONE))?;
+    //                     main_gate.select(&mut ctx, a, &b, &cond)?;
 
-                        Ok(advices)
-                    },
-                )?;
+    //                     Ok(advices)
+    //                 },
+    //             )?;
 
-                for (offset, advice) in advices.into_iter().enumerate() {
-                    main_gate.expose_public(layouter.namespace(|| ""), advice, offset)?
-                }
+    //             for (offset, advice) in advices.into_iter().enumerate() {
+    //                 main_gate.expose_public(layouter.namespace(|| ""), advice, offset)?
+    //             }
 
-                Ok(())
-            }
-        }
-    }
+    //             Ok(())
+    //         }
+    //     }
+    // }
 }

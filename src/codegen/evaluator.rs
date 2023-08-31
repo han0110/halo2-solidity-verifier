@@ -5,7 +5,7 @@ use crate::{
     fe_to_u256,
 };
 use halo2_proofs::{
-    halo2curves::ff::PrimeField,
+    halo2curves::group::ff::PrimeField,
     plonk::{
         Advice, AdviceQuery, Any, Challenge, ConstraintSystem, Expression, Fixed, FixedQuery, Gate,
         InstanceQuery,

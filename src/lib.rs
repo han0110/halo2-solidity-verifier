@@ -1,4 +1,4 @@
-use halo2_proofs::halo2curves::{ff::PrimeField, CurveAffine};
+use halo2_proofs::halo2curves::{group::ff::PrimeField, CurveAffine};
 use itertools::chain;
 use ruint::aliases::U256;
 use std::borrow::Borrow;

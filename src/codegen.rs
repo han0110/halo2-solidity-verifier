@@ -12,7 +12,9 @@ use crate::{
 };
 use halo2_proofs::{
     arithmetic::Field,
-    halo2curves::{ff::PrimeField, pairing::MultiMillerLoop, serde::SerdeObject, CurveAffine},
+    halo2curves::{
+        group::ff::PrimeField, pairing::MultiMillerLoop, serde::SerdeObject, CurveAffine,
+    },
     plonk::VerifyingKey,
     poly::{commitment::ParamsProver, kzg::commitment::ParamsKZG, Rotation},
 };
