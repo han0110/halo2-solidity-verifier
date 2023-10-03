@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v2023_04_20" }
+halo2_proofs = { git = "https://github.com/han0110/halo2", branch = "feature/logup" }
 askama = { version = "0.12.0", features = ["config"], default-features = false }
 hex = "0.4.3"
 ruint = "1.10.1"
@@ -29,3 +29,6 @@ evm = ["dep:revm"]
 [[example]]
 name = "separately"
 required-features = ["evm"]
+
+[patch."https://github.com/privacy-scaling-explorations/halo2"]
+halo2_proofs = { git = "https://github.com/han0110/halo2", branch = "feature/logup" }
