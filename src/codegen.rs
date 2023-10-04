@@ -8,7 +8,7 @@ use crate::codegen::{
     util::{fr_to_u256, g1_to_u256s, g2_to_u256s, ConstraintSystemMeta, Data, Ptr},
 };
 use halo2_proofs::{
-    halo2curves::{bn256, ff::Field},
+    halo2curves::{bn256, group::ff::Field},
     plonk::VerifyingKey,
     poly::{commitment::ParamsProver, kzg::commitment::ParamsKZG, Rotation},
 };
@@ -39,7 +39,7 @@ pub struct SolidityGenerator<'a> {
 ///
 /// Given instances and `AccumulatorEncoding`, the accumulator will be interpreted as below:
 /// ```rust
-/// use halo2_proofs::halo2curves::{bn256, ff::{Field, PrimeField}, CurveAffine};
+/// use halo2_proofs::halo2curves::{bn256, group::ff::{Field, PrimeField}, CurveAffine};
 ///
 /// fn accumulator_from_limbs(
 ///     instances: &[bn256::Fr],
@@ -58,7 +58,7 @@ pub struct SolidityGenerator<'a> {
 /// }
 ///
 /// fn fe_from_limbs(limbs: &[bn256::Fr], num_limb_bits: usize) -> bn256::Fq {
-///     limbs.iter().rev().fold(bn256::Fq::ZERO, |acc, limb| {
+///     limbs.iter().rev().fold(bn256::Fq::zero(), |acc, limb| {
 ///         acc * bn256::Fq::from(2).pow_vartime([num_limb_bits as u64])
 ///             + bn256::Fq::from_repr_vartime(limb.to_repr()).unwrap()
 ///     })
@@ -320,7 +320,7 @@ impl<'a> SolidityGenerator<'a> {
 // Remove when `vk.transcript_repr()` is ready for usage.
 fn vk_transcript_repr(vk: &VerifyingKey<bn256::G1Affine>) -> bn256::Fr {
     use blake2b_simd::Params;
-    use halo2_proofs::halo2curves::ff::FromUniformBytes;
+    use halo2_proofs::arithmetic::FieldExt;
 
     let fmtted_pinned_vk = format!("{:?}", vk.pinned());
     let mut hasher = Params::new()
@@ -330,5 +330,5 @@ fn vk_transcript_repr(vk: &VerifyingKey<bn256::G1Affine>) -> bn256::Fr {
     hasher
         .update(&(fmtted_pinned_vk.len() as u64).to_le_bytes())
         .update(fmtted_pinned_vk.as_bytes());
-    FromUniformBytes::from_uniform_bytes(hasher.finalize().as_array())
+    FieldExt::from_bytes_wide(hasher.finalize().as_array())
 }

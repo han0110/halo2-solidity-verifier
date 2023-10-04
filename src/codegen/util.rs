@@ -3,7 +3,7 @@ use crate::codegen::{
     BatchOpenScheme::{self, Bdfg21, Gwc19},
 };
 use halo2_proofs::{
-    halo2curves::{bn256, ff::PrimeField, CurveAffine},
+    halo2curves::{bn256, group::ff::PrimeField, CurveAffine},
     plonk::{Any, Column, ConstraintSystem},
 };
 use itertools::{chain, izip, Itertools};

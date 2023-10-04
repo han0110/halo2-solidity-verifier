@@ -136,8 +136,11 @@ mod halo2 {
         arithmetic::CurveAffine,
         halo2curves::{
             bn256,
-            ff::{Field, PrimeField},
-            group::{prime::PrimeCurveAffine, Curve, Group},
+            group::{
+                ff::{Field, PrimeField},
+                prime::PrimeCurveAffine,
+                Curve, Group,
+            },
             pairing::{MillerLoopResult, MultiMillerLoop},
         },
         plonk::{create_proof, keygen_pk, keygen_vk, verify_proof, Circuit, VerifyingKey},
@@ -281,7 +284,7 @@ mod halo2 {
             arithmetic::CurveAffine,
             circuit::{Layouter, SimpleFloorPlanner, Value},
             halo2curves::{
-                ff::{Field, PrimeField},
+                group::ff::{Field, PrimeField},
                 pairing::MultiMillerLoop,
             },
             plonk::{
@@ -459,10 +462,10 @@ mod halo2 {
             RangeInstructions, RegionCtx,
         };
         use halo2_proofs::{
-            arithmetic::CurveAffine,
+            arithmetic::{CurveAffine, FieldExt},
             circuit::{Layouter, SimpleFloorPlanner, Value},
             halo2curves::{
-                ff::{Field, PrimeField},
+                group::ff::{Field, PrimeField},
                 pairing::MultiMillerLoop,
             },
             plonk::{Circuit, ConstraintSystem, Error},
@@ -478,7 +481,7 @@ mod halo2 {
         }
 
         impl MainGateWithRangeConfig {
-            fn configure<F: PrimeField>(
+            fn configure<F: FieldExt>(
                 meta: &mut ConstraintSystem<F>,
                 composition_bits: Vec<usize>,
                 overflow_bits: Vec<usize>,
@@ -496,11 +499,11 @@ mod halo2 {
                 }
             }
 
-            fn main_gate<F: PrimeField>(&self) -> MainGate<F> {
+            fn main_gate<F: FieldExt>(&self) -> MainGate<F> {
                 MainGate::new(self.main_gate_config.clone())
             }
 
-            fn range_chip<F: PrimeField>(&self) -> RangeChip<F> {
+            fn range_chip<F: FieldExt>(&self) -> RangeChip<F> {
                 RangeChip::new(self.range_config.clone())
             }
         }
@@ -594,7 +597,8 @@ mod halo2 {
                             a,
                             M::Scalar::from(2),
                         )?;
-                        let cond = main_gate.assign_bit(&mut ctx, Value::known(M::Scalar::ONE))?;
+                        let cond =
+                            main_gate.assign_bit(&mut ctx, Value::known(M::Scalar::one()))?;
                         main_gate.select(&mut ctx, a, &b, &cond)?;
 
                         Ok(advices)
